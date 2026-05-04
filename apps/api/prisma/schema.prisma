@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  phone       String   @unique
+  displayName String
+  photo       String?
+  actionTag1  String
+  actionTag2  String
+  actionTag3  String
+  vibeText    String?
+  readyNow    Boolean  @default(false)
+  verifiedAt  DateTime?
+  ghostMode   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  location    UserLocation?
+  pingsSent   Ping[]        @relation("PingSender")
+  pingsRecv   Ping[]        @relation("PingReceiver")
+  triggers    MashTrigger[]
+  sessions    Session[]
+
+  @@index([readyNow])
+  @@index([verifiedAt])
+}
+
+model UserLocation {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  lat         Float
+  lng         Float
+  accuracy    Float
+  updatedAt   DateTime @updatedAt
+
+  // PostGIS — raw SQL for spatial queries
+  // geom GEOGRAPHY(POINT, 4326) generated via migration
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([lat, lng])
+}
+
+model Ping {
+  id          String     @id @default(cuid())
+  fromUserId  String
+  toUserId    String
+  status      PingStatus @default(PENDING)
+  channelId   String?    // LiveKit room — set on mutual accept
+  sentAt      DateTime   @default(now())
+  expiresAt   DateTime
+  respondedAt DateTime?
+
+  from        User       @relation("PingSender",   fields: [fromUserId], references: [id])
+  to          User       @relation("PingReceiver", fields: [toUserId],   references: [id])
+
+  @@index([toUserId, status])
+  @@index([fromUserId, status])
+  @@index([expiresAt])
+}
+
+enum PingStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+model MashTrigger {
+  id              String   @id @default(cuid())
+  userId          String
+  name            String
+  conditionType   String   // proximity | tag_match | verified_only
+  radiusMeters    Float?
+  tags            String[] // action tags to match
+  actionType      String   // vibrate | notify | auto_ping | show_vector
+  vibrationPat    Int[]
+  notifyTitle     String?
+  enabled         Boolean  @default(true)
+  createdAt       DateTime @default(now())
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  refreshToken String   @unique
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}

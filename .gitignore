@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+.yarn/cache
+.yarn/unplugged
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Expo
+.expo/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Prisma
+apps/api/prisma/migrations/*.sql
+
+# Editor
+.vscode/settings.json
+.idea/

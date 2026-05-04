@@ -1,0 +1,36 @@
+{
+  "name": "proxm",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PROXM — Tactical proximity dating platform. Deploy. Don't browse.",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:api": "yarn workspace @proxm/api dev",
+    "dev:web": "yarn workspace @proxm/web dev",
+    "dev:mobile": "yarn workspace @proxm/mobile start",
+    "build:api": "yarn workspace @proxm/api build",
+    "build:web": "yarn workspace @proxm/web build",
+    "build:all": "yarn workspaces run build",
+    "test": "yarn workspaces run test",
+    "lint": "yarn workspaces run lint",
+    "typecheck": "yarn workspaces run typecheck",
+    "db:migrate": "yarn workspace @proxm/api db:migrate",
+    "db:generate": "yarn workspace @proxm/api db:generate",
+    "db:studio": "yarn workspace @proxm/api db:studio"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.57.0",
+    "prettier": "^3.2.5",
+    "turbo": "^1.13.3"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "yarn": ">=1.22.0"
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "expo": {
+    "name": "PROXM",
+    "slug": "proxm",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#000000"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.cloudygetty.proxm",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "PROXM needs your location to show nearby users.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "PROXM uses background location in Live mode.",
+        "NSMicrophoneUsageDescription": "PROXM needs mic access for the 30-second audio channel.",
+        "NSCameraUsageDescription": "PROXM uses your camera for Face Verification."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#000000"
+      },
+      "package": "com.cloudygetty.proxm",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "RECORD_AUDIO",
+        "CAMERA",
+        "VIBRATE"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-location",
+      [
+        "expo-camera",
+        { "cameraPermission": "Allow PROXM to access your camera for Face Verify." }
+      ]
+    ],
+    "scheme": "proxm",
+    "extra": {
+      "eas": { "projectId": "YOUR_EAS_PROJECT_ID" }
+    }
+  }
+}
