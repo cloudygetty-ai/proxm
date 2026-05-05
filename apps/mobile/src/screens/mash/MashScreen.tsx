@@ -3,15 +3,17 @@ import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   Switch, Platform,
 } from "react-native";
+import * as Haptics from "expo-haptics";
 import { useAppStore } from "../../store/useAppStore";
 import { send } from "../../services/websocket";
 import type { MashTrigger } from "@proxm/types";
 
 const C = {
-  void: "#000", surface: "#060606", border: "#181818",
-  muted: "#333", ghost: "#666", text: "#d8d8d8", bright: "#fff",
+  void: "#000", surface: "#060606", panel: "#0c0c0c",
+  border: "#181818", muted: "#333", ghost: "#666",
+  text: "#d8d8d8", bright: "#fff",
   crimson: "#cc1133", crimsonLo: "rgba(204,17,51,0.12)",
-  electric: "#00aaff", amber: "#ff7700",
+  electric: "#00aaff",
 };
 
 const PRESET_TRIGGERS: Omit<MashTrigger, "id" | "userId" | "createdAt">[] = [
@@ -73,10 +75,8 @@ function TriggerCard({ trigger, onToggle, onDelete }) {
   );
 }
 
-export function MashScreen() {
+export function MashScreen({ navigation }) {
   const { mashTriggers, setMashTriggers } = useAppStore();
-
-  // Seed with presets if empty
   const [triggers, setTriggers] = useState<MashTrigger[]>(
     mashTriggers.length > 0 ? mashTriggers : PRESET_TRIGGERS.map((t, i) => ({
       ...t, id: `preset-${i}`, userId: "", createdAt: new Date(),
@@ -89,13 +89,8 @@ export function MashScreen() {
     send({ type: "mash_sync", triggers: next });
   };
 
-  const toggleTrigger = (id: string) => {
-    syncTriggers(triggers.map(t => t.id === id ? { ...t, enabled: !t.enabled } : t));
-  };
-
-  const deleteTrigger = (id: string) => {
-    syncTriggers(triggers.filter(t => t.id !== id));
-  };
+  const toggleTrigger = (id: string) => syncTriggers(triggers.map(t => t.id === id ? { ...t, enabled: !t.enabled } : t));
+  const deleteTrigger = (id: string) => syncTriggers(triggers.filter(t => t.id !== id));
 
   return (
     <View style={styles.root}>
@@ -105,7 +100,22 @@ export function MashScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.list}>
-        <Text style={styles.sectionLabel}>ACTIVE RULES</Text>
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionLabel}>ACTIVE RULES</Text>
+          <TouchableOpacity
+            style={styles.newBtn}
+            onPress={() => navigation.navigate("MashBuilder")}
+          >
+            <Text style={styles.newBtnText}>+ NEW</Text>
+          </TouchableOpacity>
+        </View>
+
+        {triggers.length === 0 && (
+          <View style={styles.emptyBox}>
+            <Text style={styles.emptyText}>No triggers. Tap + NEW to create one.</Text>
+          </View>
+        )}
+
         {triggers.map(t => (
           <TriggerCard
             key={t.id}
@@ -120,7 +130,14 @@ export function MashScreen() {
         <View style={styles.consoleBox}>
           <Text style={styles.consoleLabel}>BROADCAST TO CIRCLE</Text>
           {["#Now · Downtown", "#Late · Home", "#Discreet · Location off"].map(cmd => (
-            <TouchableOpacity key={cmd} style={styles.consoleRow}>
+            <TouchableOpacity
+              key={cmd}
+              style={styles.consoleRow}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                send({ type: "location_broadcast", lat: 0, lng: 0, accuracy: 5 });
+              }}
+            >
               <Text style={styles.consolePrompt}>›</Text>
               <Text style={styles.consoleCmd}>{cmd}</Text>
             </TouchableOpacity>
@@ -138,19 +155,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24, paddingBottom: 16,
     borderBottomWidth: 1, borderBottomColor: C.border,
   },
-  wordmark: {
-    fontFamily: "BebasNeue_400Regular", fontSize: 42,
-    color: C.bright, letterSpacing: 10,
-  },
-  subtitle: {
-    fontSize: 9, letterSpacing: 4, color: C.ghost,
-    fontFamily: "SpaceMono_400Regular",
-  },
-  list: { padding: 24, gap: 12 },
-  sectionLabel: {
-    fontSize: 9, letterSpacing: 4, color: C.ghost,
-    fontFamily: "SpaceMono_400Regular", marginBottom: 12,
-  },
+  wordmark: { fontFamily: "BebasNeue_400Regular", fontSize: 42, color: C.bright, letterSpacing: 10 },
+  subtitle: { fontSize: 9, letterSpacing: 4, color: C.ghost, fontFamily: "SpaceMono_400Regular" },
+  list: { padding: 24, gap: 0 },
+  sectionHeaderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
+  sectionLabel: { fontSize: 9, letterSpacing: 4, color: C.ghost, fontFamily: "SpaceMono_400Regular" },
+  newBtn: { borderWidth: 1, borderColor: C.crimson, paddingHorizontal: 12, paddingVertical: 5 },
+  newBtnText: { color: C.crimson, fontSize: 9, letterSpacing: 3, fontFamily: "SpaceMono_700Bold" },
+  emptyBox: { borderWidth: 1, borderColor: C.border, borderStyle: "dashed", padding: 24, alignItems: "center", marginBottom: 12 },
+  emptyText: { color: C.ghost, fontSize: 10, letterSpacing: 1, fontFamily: "SpaceMono_400Regular" },
   card: {
     borderWidth: 1, borderColor: C.border,
     backgroundColor: C.surface, padding: 16, marginBottom: 8,
@@ -158,22 +171,13 @@ const styles = StyleSheet.create({
   cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
   cardName: { color: C.text, fontSize: 13, letterSpacing: 1, fontFamily: "SpaceMono_700Bold" },
   cardMeta: { flexDirection: "row", gap: 8, marginBottom: 12 },
-  metaChip: {
-    borderWidth: 1, borderColor: C.muted,
-    paddingHorizontal: 8, paddingVertical: 3,
-  },
+  metaChip: { borderWidth: 1, borderColor: C.muted, paddingHorizontal: 8, paddingVertical: 3 },
   metaText: { color: C.ghost, fontSize: 9, letterSpacing: 1, fontFamily: "SpaceMono_400Regular" },
   deleteBtn: { alignSelf: "flex-end" },
   deleteText: { color: C.muted, fontSize: 8, letterSpacing: 2, fontFamily: "SpaceMono_400Regular" },
   divider: { height: 1, backgroundColor: C.border, marginVertical: 24 },
-  consoleBox: {
-    borderWidth: 1, borderColor: C.border, backgroundColor: C.surface,
-    padding: 16,
-  },
-  consoleLabel: {
-    fontSize: 8, letterSpacing: 3, color: C.ghost,
-    fontFamily: "SpaceMono_400Regular", marginBottom: 12,
-  },
+  consoleBox: { borderWidth: 1, borderColor: C.border, backgroundColor: C.surface, padding: 16 },
+  consoleLabel: { fontSize: 8, letterSpacing: 3, color: C.ghost, fontFamily: "SpaceMono_400Regular", marginBottom: 12 },
   consoleRow: { flexDirection: "row", gap: 10, paddingVertical: 8 },
   consolePrompt: { color: C.crimson, fontSize: 12, fontFamily: "SpaceMono_700Bold" },
   consoleCmd: { color: C.text, fontSize: 11, letterSpacing: 1, fontFamily: "SpaceMono_400Regular" },
