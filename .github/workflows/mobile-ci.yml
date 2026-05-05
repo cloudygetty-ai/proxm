@@ -1,0 +1,85 @@
+name: Mobile CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/mobile/**"
+      - "packages/**"
+  pull_request:
+    paths:
+      - "apps/mobile/**"
+
+jobs:
+  typecheck:
+    name: TypeCheck Mobile
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+      - run: yarn install --frozen-lockfile
+      - run: yarn workspace @proxm/types build
+      - run: yarn workspace @proxm/mobile typecheck
+
+  build-ios-preview:
+    name: EAS Build iOS Preview
+    runs-on: ubuntu-latest
+    needs: typecheck
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+      - run: yarn install --frozen-lockfile
+      - uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - name: EAS Build iOS
+        working-directory: apps/mobile
+        run: eas build --platform ios --profile preview --non-interactive
+
+  build-android-preview:
+    name: EAS Build Android Preview
+    runs-on: ubuntu-latest
+    needs: typecheck
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+      - run: yarn install --frozen-lockfile
+      - uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - name: EAS Build Android
+        working-directory: apps/mobile
+        run: eas build --platform android --profile preview --non-interactive
+
+  submit-production:
+    name: EAS Submit Production
+    runs-on: ubuntu-latest
+    needs: [build-ios-preview, build-android-preview]
+    if: github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[release]')
+    steps:
+      - uses: actions/checkout@v4
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Submit iOS
+        working-directory: apps/mobile
+        run: eas submit --platform ios --profile production --non-interactive
+      - name: Submit Android
+        working-directory: apps/mobile
+        run: eas submit --platform android --profile production --non-interactive
