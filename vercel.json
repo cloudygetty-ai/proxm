@@ -1,16 +1,8 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "apps/api/src/index.ts",
-      "use": "@vercel/node",
-      "config": { "includeFiles": ["apps/api/src/**"] }
-    }
-  ],
-  "routes": [
-    { "src": "/(.*)", "dest": "apps/api/src/index.ts" }
-  ],
-  "env": {
-    "NODE_ENV": "production"
-  }
+  "installCommand": "npm install --ignore-scripts --legacy-peer-deps",
+  "buildCommand": "cd apps/web && npx vite build",
+  "outputDirectory": "apps/web/dist",
+  "framework": null,
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }
